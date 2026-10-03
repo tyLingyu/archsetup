@@ -4,6 +4,7 @@
 
 CMDLINE=$(boot_cmdline)
 ESP=$(esp_path 2>/dev/null || true)
+is_uefi && pac efibootmgr
 is_uefi && [[ -z $ESP ]] && die "UEFI system but no mounted ESP (vfat on /efi, /boot or /boot/efi)."
 
 info "ESP: ${ESP:-none (BIOS)}"

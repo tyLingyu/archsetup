@@ -61,8 +61,9 @@ EOF
 arch-chroot /mnt bash -euxc '
     echo "root:root" | chpasswd
     systemctl enable sshd systemd-networkd systemd-resolved
-    ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 '
+# arch-chroot bind-mounts resolv.conf, so link it from outside
+ln -sf ../run/systemd/resolve/stub-resolv.conf /mnt/etc/resolv.conf
 
 # serial console so test/vm.sh can watch the boot
 cmdline="root=UUID=$(blkid -s UUID -o value "${DISK}2") rootflags=subvol=@ rw console=tty0 console=ttyS0,115200"

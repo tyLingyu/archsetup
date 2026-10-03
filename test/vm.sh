@@ -64,7 +64,8 @@ cmd_create() {
     cp "$OVMF_VARS_TPL" "$VARS"
 
     # kernel + initramfs + archiso search uuid straight from the ISO
-    local ex=$VM/iso; rm -rf "$ex"; mkdir -p "$ex"
+    # files extracted from the ISO are read-only
+    local ex=$VM/iso; [[ -d $ex ]] && chmod -R u+w "$ex"; rm -rf "$ex"; mkdir -p "$ex"
     bsdtar -xf "$ISO" -C "$ex" arch/boot/x86_64/vmlinuz-linux arch/boot/x86_64/initramfs-linux.img 'loader/entries/*'
     local uuid; uuid=$(grep -ho 'archisosearchuuid=[^ ]*' "$ex"/loader/entries/*.conf | head -1)
 
@@ -73,7 +74,7 @@ cmd_create() {
     cp "$HERE/vm-pacstrap.sh" "$www/"; cp "$KEY.pub" "$www/id_ed25519.pub"
     python3 -m http.server "$HTTP_PORT" -d "$www" -b 127.0.0.1 >/dev/null 2>&1 &
     local http_pid=$!
-    trap 'kill $http_pid 2>/dev/null' EXIT
+    trap "kill $http_pid 2>/dev/null" EXIT
 
     local host=http://10.0.2.2:$HTTP_PORT
     echo "Installing base system ($boot), log: $VM/create.log"

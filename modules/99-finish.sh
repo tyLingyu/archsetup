@@ -13,6 +13,8 @@ if [[ -f $STATE_DIR/linger-enabled ]]; then
     rm -f "$STATE_DIR/linger-enabled"
 fi
 rm -f "$TMP_SUDOERS"
+# password hashes are dropped in 20-base; a resumed/unattended run may re-add them
+sed -i '/^ROOT_HASH=/d; /^USER_HASH=/d' "$ANSWERS_FILE"
 cp -f "$LOG_FILE" "$(user_home)/archsetup.log" && chown "$USER_NAME:" "$(user_home)/archsetup.log"
 
 ok "archsetup finished."
