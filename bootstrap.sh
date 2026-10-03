@@ -243,7 +243,8 @@ launch() {
         info "Starting installer inside kmscon (Chinese UI)..."
         sleep 1
         # --reset-env is on by default: install.sh reads $CONF_FILE instead of env
-        kmscon --vt=8 --switchvt --oneshot \
+        # default TERM=kmscon has no terminfo entry -> dialog would fail
+        kmscon --vt=8 --switchvt --oneshot --term xterm-256color \
                --font-name "$CJK_FONT" --font-size 18 \
                -l -- "${cmd[@]}" \
             || warn "kmscon exited with an error."
