@@ -179,3 +179,20 @@ find_windows_esp() {
     done < <(lsblk -rnpo PATH,PARTTYPE | awk 'tolower($2)=="c12a7328-f81f-11d2-ba4b-00a0c93ec93b"{print $1}')
     return 1
 }
+
+# Run a command as the target user with a live systemd --user manager and
+# session bus (e.g. `systemctl --user enable`), even though they never logged
+# in. Lingering is switched on temporarily; 99-finish switches it off again.
+as_user_bus() {
+    local uid; uid=$(id -u "$USER_NAME")
+    if [[ ! -S /run/user/$uid/bus ]]; then
+        loginctl enable-linger "$USER_NAME"
+        touch "$STATE_DIR/linger-enabled"
+        local i
+        for i in {1..20}; do [[ -S /run/user/$uid/bus ]] && break; sleep 0.5; done
+    fi
+    as_user env XDG_RUNTIME_DIR="/run/user/$uid" \
+        DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" "$@"
+}
+
+user_home() { getent passwd "$USER_NAME" | cut -d: -f6; }

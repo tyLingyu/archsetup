@@ -60,3 +60,11 @@ esac
 pac man-db man-pages bash-completion pacman-contrib vim less wget unzip \
     openssh linux-firmware
 svc_enable fstrim.timer paccache.timer
+
+# ---- per-user desktop language (systemd user environment, not the tty) -------
+if [[ -n ${USER_LANG:-} ]]; then
+    d=$(user_home)/.config/environment.d
+    as_user mkdir -p "$d"
+    printf 'LANG=%s\nLANGUAGE=zh_CN:en_US\n' "$USER_LANG" | as_user tee "$d/10-locale.conf" >/dev/null
+    ok "Desktop session language: $USER_LANG"
+fi

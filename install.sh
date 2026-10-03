@@ -71,6 +71,24 @@ w_desktop() {
     save_answer COMPOSITOR "$c"
 }
 
+# ---- display manager (only the niri / Hyprland family gets a choice) ---------
+w_dm() {
+    local dm items=()
+    case $DESKTOP in
+        minimal) save_answer DM none; return 0 ;;
+        gnome)   save_answer DM gdm; return 0 ;;
+        kde)     save_answer DM plasmalogin; return 0 ;;
+    esac
+    items+=(sddm-silent "SDDM + SilentSDDM ($(t recommended))")
+    case $DESKTOP in
+        dms)      items+=(shell-greeter "dms-greeter (greetd)") ;;
+        noctalia) items+=(shell-greeter "noctalia-greeter (greetd)") ;;
+    esac
+    items+=(tuigreet "greetd + tuigreet" ly "Ly" none "$(t dm_none)")
+    dm=$(d_menu "$(t dm_title)" "$(t dm_text)" "${DM:-sddm-silent}" "${items[@]}") || return 1
+    save_answer DM "$dm"
+}
+
 # ---- repos -------------------------------------------------------------------
 w_repos() {
     if grep -q '^\[chaotic-aur\]' /etc/pacman.conf; then
@@ -99,10 +117,17 @@ w_timezone() {
 w_locale() {
     local cur l
     cur=$(sed -n 's/^LANG=//p' /etc/locale.conf 2>/dev/null)
-    l=$(d_menu "$(t loc_title)" "$(t loc_text "${cur:-$(t none)}")" "${SYS_LANG:-${cur:-en_US.UTF-8}}" \
-        en_US.UTF-8 "$(t loc_en)" \
-        zh_CN.UTF-8 "$(t loc_zh)") || return 1
-    save_answer SYS_LANG "$l"
+    l=$(d_menu "$(t loc_title)" "$(t loc_text "${cur:-$(t none)}")" \
+        "${LOCALE_MODE:-$([[ $UI_LANG == zh ]] && echo en-zh || echo en)}" \
+        en    "$(t loc_en)" \
+        en-zh "$(t loc_enzh)" \
+        zh    "$(t loc_zh)") || return 1
+    save_answer LOCALE_MODE "$l"
+    case $l in
+        en)    save_answer SYS_LANG en_US.UTF-8; save_answer USER_LANG "" ;;
+        en-zh) save_answer SYS_LANG en_US.UTF-8; save_answer USER_LANG zh_CN.UTF-8 ;;
+        zh)    save_answer SYS_LANG zh_CN.UTF-8; save_answer USER_LANG "" ;;
+    esac
 }
 
 # ---- hostname ----------------------------------------------------------------
@@ -264,9 +289,9 @@ w_apps() {
 # ---- summary -----------------------------------------------------------------
 w_summary() {
     local s
-    s+="$(t sum_desktop): \Zb${DESKTOP}${COMPOSITOR:+ + $COMPOSITOR}\Zn\n"
+    s+="$(t sum_desktop): \Zb${DESKTOP}${COMPOSITOR:+ + $COMPOSITOR}\Zn   $(t dm_title): ${DM}\n"
     s+="chaotic-aur: ${USE_CHAOTIC}    GitHub proxy: ${GH_PROXY:-$(t none)}\n"
-    s+="$(t sum_tz): ${TIMEZONE}    LANG: ${SYS_LANG}\n"
+    s+="$(t sum_tz): ${TIMEZONE}    LANG: ${SYS_LANG}${USER_LANG:+ ($(t sum_desktop): $USER_LANG)}\n"
     s+="$(t sum_host): ${HOSTNAME_NEW}\n"
     s+="$(t sum_user): ${USER_NAME}$([[ -n $USER_NEW ]] && echo " ($(t new))")\n"
     s+="$(t sum_net): ${NETWORK}\n"
@@ -278,7 +303,7 @@ w_summary() {
     _dlg --title "$(t sum_title)" --yes-label "$(t start)" --no-label "$(t back)" --yesno "$s" 0 0
 }
 
-WIZARD=(w_desktop w_repos w_timezone w_locale w_hostname w_root w_user w_network w_bootloader w_apps w_summary)
+WIZARD=(w_desktop w_dm w_repos w_timezone w_locale w_hostname w_root w_user w_network w_bootloader w_apps w_summary)
 
 wizard() {
     local i=0
@@ -322,6 +347,18 @@ run_modules() {
     done
 }
 
+finish_dialog() {
+    local msg home
+    home=$(getent passwd "$USER_NAME" | cut -d: -f6)
+    msg=$(t done_text "$USER_NAME" "$home/archsetup.log")
+    [[ -s $STATE_DIR/failed-apps ]] && msg+="\n\n$(t done_failed "$(xargs < "$STATE_DIR/failed-apps")")"
+    [[ -n $GH_PROXY ]] && msg+="\n\n$(t done_proxy "$GH_PROXY")"
+    if d_yesno "$(t done_title)" "$msg\n\n$(t done_reboot)"; then
+        clear; systemctl reboot
+    fi
+    clear
+}
+
 main() {
     load_answers
     if [[ ${WIZARD_DONE:-} == 1 ]]; then
@@ -336,6 +373,7 @@ main() {
     fi
     clear
     run_modules
+    finish_dialog
 }
 
 main "$@"

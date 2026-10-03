@@ -21,6 +21,10 @@ L_en=(
     [comp_niri]="scrollable tiling"
     [comp_hypr]="dynamic tiling, eye candy"
 
+    [dm_title]="Login manager"
+    [dm_text]="How do you want to log in?"
+    [dm_none]="none — log in on the tty and start the compositor by hand"
+
     [chaotic_text]="chaotic-aur is not configured.\n\nUse chaotic-aur to install prebuilt AUR binaries instead of compiling them? Packages not in any repo will still be built with paru."
 
     [tz_title]="Timezone"
@@ -29,8 +33,9 @@ L_en=(
 
     [loc_title]="System locale"
     [loc_text]="Current LANG: %s\n\nen_US.UTF-8 and zh_CN.UTF-8 are always generated."
-    [loc_en]="English (recommended: tty can't show CJK)"
-    [loc_zh]="Simplified Chinese"
+    [loc_en]="English"
+    [loc_enzh]="English system + Chinese desktop session (tty can't show CJK)"
+    [loc_zh]="Simplified Chinese everywhere"
 
     [host_title]="Hostname"
     [host_text]="Current: %s"
@@ -88,6 +93,12 @@ L_en=(
     [resume]="Resume where it stopped"
     [restart]="Start over (ask everything again)"
 
+    [done_title]="Done"
+    [done_text]="Installation finished. Log in as %s after rebooting.\n\nFull log: %s"
+    [done_failed]="These packages could not be installed: %s"
+    [done_proxy]="GitHub downloads in makepkg/git still go through %s.\nRemove /etc/makepkg.conf.d/archsetup-ghproxy.conf and the url.*.insteadOf entry in /etc/gitconfig to undo."
+    [done_reboot]="Reboot now?"
+
     [mod_failed]="Module %s failed (exit %s)."
     [mod_failed_title]="Error"
     [mod_failed_text]="Module %s failed.\n\nSee the output above and %s."
@@ -112,6 +123,10 @@ L_zh=(
     [comp_niri]="滚动式平铺"
     [comp_hypr]="动态平铺，特效丰富"
 
+    [dm_title]="登录管理器"
+    [dm_text]="选择登录方式："
+    [dm_none]="不使用 — 在 tty 登录后手动启动合成器"
+
     [chaotic_text]="未配置 chaotic-aur。\n\n是否使用 chaotic-aur 直接安装预编译的 AUR 包，而不是本地编译？不在任何仓库中的包仍会用 paru 编译。"
 
     [tz_title]="时区"
@@ -120,8 +135,9 @@ L_zh=(
 
     [loc_title]="系统语言"
     [loc_text]="当前 LANG：%s\n\nen_US.UTF-8 和 zh_CN.UTF-8 都会生成。"
-    [loc_en]="英文（推荐：tty 无法显示中文）"
-    [loc_zh]="简体中文"
+    [loc_en]="英文"
+    [loc_enzh]="系统英文 + 桌面中文（推荐：tty 无法显示中文）"
+    [loc_zh]="全部简体中文"
 
     [host_title]="主机名"
     [host_text]="当前：%s"
@@ -178,6 +194,12 @@ L_zh=(
     [resume_text]="找到了上次运行保存的选项。"
     [resume]="从中断处继续"
     [restart]="重新开始（重新回答所有问题）"
+
+    [done_title]="完成"
+    [done_text]="安装完成。重启后用 %s 登录。\n\n完整日志：%s"
+    [done_failed]="以下软件包安装失败：%s"
+    [done_proxy]="makepkg/git 下载 GitHub 仍会经过 %s。\n如需取消，删除 /etc/makepkg.conf.d/archsetup-ghproxy.conf 以及 /etc/gitconfig 中的 url.*.insteadOf。"
+    [done_reboot]="现在重启？"
 
     [mod_failed]="模块 %s 失败（退出码 %s）。"
     [mod_failed_title]="错误"
