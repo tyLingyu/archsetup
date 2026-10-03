@@ -11,6 +11,8 @@
 #   test/vm.sh deploy                   copy this working tree to /opt/archsetup
 #   test/vm.sh run ANSWERS              deploy + run install.sh unattended with a
 #                                       preseed file from test/answers/
+#   test/vm.sh shot                     screenshot the VM display (test/.vm/shot.png)
+#   test/vm.sh type TEXT | key KEY      send keystrokes (lowercase letters/digits, ret, tab...)
 #   test/vm.sh stop                     power the VM off
 set -euo pipefail
 
@@ -97,7 +99,8 @@ cmd_save()    { cp --reflink=auto "$DISK" "$VM/$1.raw"; cp "$VARS" "$VM/$1.vars"
 cmd_restore() { cp --reflink=auto "$VM/$1.raw" "$DISK"; cp "$VM/$1.vars" "$VARS"; echo "Restored $1"; }
 
 cmd_boot() {
-    local display=(-display none -vga none)
+    # a VGA device even when headless, so `test/vm.sh shot` can screendump
+    local display=(-display none -vga none -device virtio-vga)
     [[ ${1:-} == --gui ]] && display=(-device virtio-vga-gl -display gtk,gl=on)
     # shellcheck disable=SC2046
     qemu-system-x86_64 $(accel) -machine q35 -smp "$CPUS" -m "$MEM" \
@@ -117,6 +120,25 @@ cmd_stop() {
     echo quit | socat - UNIX-CONNECT:"$VM/monitor.sock" >/dev/null || true
 }
 
+# screenshot of the VM display -> test/.vm/shot.png
+cmd_shot() {
+    echo "screendump $VM/shot.ppm" | socat - UNIX-CONNECT:"$VM/monitor.sock" >/dev/null
+    sleep 1
+    python3 - "$VM/shot.ppm" "$VM/shot.png" <<'PY' 2>/dev/null || magick "$VM/shot.ppm" "$VM/shot.png"
+import sys, zlib, struct
+d = open(sys.argv[1], 'rb').read().split(b'\n', 3)
+w, h = map(int, d[1].split()); px = d[3]
+raw = b''.join(b'\0' + px[y*w*3:(y+1)*w*3] for y in range(h))
+c = lambda t, b: struct.pack('>I', len(b)) + t + b + struct.pack('>I', zlib.crc32(t + b))
+open(sys.argv[2], 'wb').write(b'\x89PNG\r\n\x1a\n' + c(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + c(b'IDAT', zlib.compress(raw)) + c(b'IEND', b''))
+PY
+    echo "$VM/shot.png"
+}
+
+# type text / press keys on the VM console, e.g. `test/vm.sh key ret`
+cmd_type() { local ch; for ((i = 0; i < ${#1}; i++)); do ch=${1:i:1}; echo "sendkey $ch" | socat - UNIX-CONNECT:"$VM/monitor.sock" >/dev/null; done; }
+cmd_key()  { echo "sendkey $1" | socat - UNIX-CONNECT:"$VM/monitor.sock" >/dev/null; }
+
 cmd_deploy() {
     tar -C "$REPO" --exclude=.git --exclude=test/.vm -cf - . | ssh_vm 'rm -rf /opt/archsetup && mkdir -p /opt/archsetup && tar -C /opt/archsetup -xf -'
     ssh_vm 'mkdir -p /var/lib/archsetup && [[ -f /var/lib/archsetup/bootstrap.conf ]] ||
@@ -134,7 +156,7 @@ cmd_run() {
 }
 
 case ${1:-} in
-    fetch|create|save|restore|boot|stop|deploy|run) c=$1; shift; "cmd_$c" "$@" ;;
+    fetch|create|save|restore|boot|stop|deploy|run|shot|type|key) c=$1; shift; "cmd_$c" "$@" ;;
     ssh) shift; ssh_vm "$@" ;;
     *) sed -n '2,15p' "$0"; exit 1 ;;
 esac

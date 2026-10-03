@@ -3,6 +3,10 @@
 
 # audio, bluetooth, portals, user dirs — every desktop needs these
 desktop_base() {
+    # fonts first, so ttf-font dependencies (sddm, browsers) don't prompt
+    local fonts=(noto-fonts noto-fonts-emoji)
+    [[ $UI_LANG == zh || ${SYS_LANG:-} == zh* || -n ${USER_LANG:-} ]] && fonts+=(noto-fonts-cjk)
+    pac "${fonts[@]}"
     pac pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber \
         bluez bluez-utils xdg-user-dirs xdg-utils polkit
     svc_enable bluetooth.service

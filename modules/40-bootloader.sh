@@ -181,6 +181,7 @@ remove_old() {
         case $old in
             systemd-boot)
                 run bootctl remove || true
+                rm -rf "$ESP/loader"
                 ;;
             grub)
                 local d
@@ -222,6 +223,17 @@ esac
 
 if [[ $BOOTLOADER != keep && -n ${BOOT_REMOVE_OLD:-} ]]; then
     remove_old
+fi
+
+# removing the old loader may have taken EFI/BOOT/BOOTX64.EFI with it; keep a
+# fallback so the disk still boots after the firmware forgets its NVRAM entries
+if is_uefi && [[ ! -f $ESP/EFI/BOOT/BOOTX64.EFI ]]; then
+    case $BOOTLOADER in
+        systemd-boot) run bootctl install --esp-path="$ESP" --no-variables ;;
+        grub)         run grub-install --target=x86_64-efi --efi-directory="$ESP" --removable ;;
+        limine)       run limine-install --fallback ;;
+        refind)       mkdir -p "$ESP/EFI/BOOT"; cp "$ESP/EFI/refind/refind_x64.efi" "$ESP/EFI/BOOT/BOOTX64.EFI" ;;
+    esac
 fi
 
 is_uefi && run efibootmgr

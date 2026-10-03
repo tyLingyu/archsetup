@@ -17,14 +17,17 @@ fi
 
 # ---- archlinuxcn (always) ----------------------------------------------------
 if ! grep -q '^\[archlinuxcn\]' "$conf"; then
+    # several servers so pacman can fall back when one is flaky
+    cn_servers=(
+        'Server = https://mirrors.ustc.edu.cn/archlinuxcn/$arch'
+        'Server = https://mirrors.tuna.tsinghua.edu.cn/archlinuxcn/$arch'
+    )
+    official='Server = https://repo.archlinuxcn.org/$arch'
     {
         echo
         echo '[archlinuxcn]'
-        if is_cn; then
-            echo 'Server = https://mirrors.ustc.edu.cn/archlinuxcn/$arch'
-            echo 'Server = https://mirrors.tuna.tsinghua.edu.cn/archlinuxcn/$arch'
-        fi
-        echo 'Server = https://repo.archlinuxcn.org/$arch'
+        if is_cn; then printf '%s\n' "${cn_servers[@]}" "$official"
+        else printf '%s\n' "$official" "${cn_servers[@]}"; fi
     } >> "$conf"
     ok "Added [archlinuxcn]"
 fi

@@ -142,6 +142,7 @@ esp_path() {
 
 # China detection: timezone first, then GeoIP
 is_cn() {
+    [[ ${TIMEZONE:-} == Asia/Shanghai ]] && return 0
     [[ $(readlink -f /etc/localtime 2>/dev/null) == */Asia/Shanghai ]] && return 0
     [[ $(curl -fsS --max-time 3 https://ipinfo.io/country 2>/dev/null | tr -d '\r\n') == CN ]]
 }

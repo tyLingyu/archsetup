@@ -62,6 +62,9 @@ arch-chroot /mnt bash -euxc '
     echo "root:root" | chpasswd
     systemctl enable sshd systemd-networkd systemd-resolved
 '
+# test/vm.sh polls ssh while the VM boots; don't let sshd penalise 10.0.2.2
+echo 'PerSourcePenalties no' > /mnt/etc/ssh/sshd_config.d/10-test.conf
+
 # arch-chroot bind-mounts resolv.conf, so link it from outside
 ln -sf ../run/systemd/resolve/stub-resolv.conf /mnt/etc/resolv.conf
 
