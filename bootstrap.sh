@@ -12,6 +12,9 @@
 #   3. install git + dialog
 #   4. pick GitHub or a gh-proxy mirror (ping, optional real clone speed test)
 #   5. clone the repo and launch install.sh (inside kmscon for zh)
+#
+# Non-interactive (testing): ARCHSETUP_LANG=en|zh  ARCHSETUP_SOURCE=<index>
+#   ARCHSETUP_ANSWERS=<preseed file> is handed on to install.sh
 # ==============================================================================
 set -euo pipefail
 
@@ -70,6 +73,7 @@ check_env() {
 # 2. language
 # ------------------------------------------------------------------------------
 select_language() {
+    if [[ -n ${ARCHSETUP_LANG:-} ]]; then UI_LANG=$ARCHSETUP_LANG; ok "Language: $UI_LANG"; return; fi
     echo
     echo "Select installer language:"
     echo "  [1] English"
@@ -185,6 +189,11 @@ select_source() {
     probe_sources
     print_sources
 
+    if [[ -n ${ARCHSETUP_SOURCE:-} ]]; then
+        SRC_IDX=$ARCHSETUP_SOURCE GH_PROXY="${PREFIXES[$ARCHSETUP_SOURCE]}"
+        ok "Source: ${SOURCES[$SRC_IDX]}"; return
+    fi
+
     # Clash/sing-box TUN fake-ip (198.18.0.0/15) makes ping meaningless
     if getent ahostsv4 github.com 2>/dev/null | awk 'NR==1{exit !($1 ~ /^198\.1[89]\./)}'; then
         warn "Fake-IP proxy detected (198.18.0.0/15): ping results are not reliable, use the clone test."
@@ -234,6 +243,7 @@ write_conf() {
 UI_LANG=$UI_LANG
 GH_PROXY=$GH_PROXY
 REPO_DIR=$TARGET_DIR
+ARCHSETUP_ANSWERS=${ARCHSETUP_ANSWERS:-}
 EOF
 }
 

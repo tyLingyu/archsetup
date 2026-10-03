@@ -6,6 +6,9 @@
 #                   /var/lib/archsetup/answers.conf (passwords only as hashes).
 # Phase 2 (run):    modules/*.sh run unattended; finished modules are recorded
 #                   in /var/lib/archsetup/progress so a re-run resumes.
+#
+# Fully unattended (testing): ARCHSETUP_ANSWERS=<preseed file> skips the
+# wizard and every dialog; a failing module aborts the run.
 # ==============================================================================
 set -uo pipefail
 
@@ -24,6 +27,11 @@ UI_LANG=en GH_PROXY=""
 [[ -f $CONF_FILE ]] && source "$CONF_FILE"
 if [[ $UI_LANG == zh ]]; then export LANG=zh_CN.UTF-8; else export LANG=C.UTF-8; fi
 export UI_LANG GH_PROXY REPO_DIR
+UNATTENDED=""
+if [[ -n ${ARCHSETUP_ANSWERS:-} ]]; then
+    [[ -f $ARCHSETUP_ANSWERS ]] || { echo "Answers file not found: $ARCHSETUP_ANSWERS"; exit 1; }
+    UNATTENDED=1
+fi
 
 command -v dialog &>/dev/null || pacman -S --needed --noconfirm dialog
 
@@ -337,6 +345,7 @@ run_modules() {
             rc=$?
             ((rc == 0)) && { mark_done "$m"; break; }
             err "$(t mod_failed "$m" "$rc")"
+            [[ -n $UNATTENDED ]] && exit "$rc"
             case $(d_menu "$(t mod_failed_title)" "$(t mod_failed_text "$m" "$LOG_FILE")" retry \
                      retry "$(t retry)" skip "$(t skip)" abort "$(t abort)") in
                 retry) clear ;;
@@ -348,6 +357,7 @@ run_modules() {
 }
 
 finish_dialog() {
+    [[ -n $UNATTENDED ]] && { ok "Unattended run finished."; return; }
     local msg home
     home=$(getent passwd "$USER_NAME" | cut -d: -f6)
     msg=$(t done_text "$USER_NAME" "$home/archsetup.log")
@@ -360,8 +370,13 @@ finish_dialog() {
 }
 
 main() {
+    if [[ -n $UNATTENDED ]] && ! cmp -s "$ARCHSETUP_ANSWERS" "$ANSWERS_FILE"; then
+        install -m600 "$ARCHSETUP_ANSWERS" "$ANSWERS_FILE"
+    fi
     load_answers
-    if [[ ${WIZARD_DONE:-} == 1 ]]; then
+    if [[ -n $UNATTENDED ]]; then
+        :
+    elif [[ ${WIZARD_DONE:-} == 1 ]]; then
         case $(d_menu "$(t resume_title)" "$(t resume_text)" resume \
                  resume "$(t resume)" restart "$(t restart)") in
             resume)  ;;

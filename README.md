@@ -38,3 +38,19 @@ curl -fsSL https://gh-proxy.org/https://raw.githubusercontent.com/tyLingyu/archs
 
 - 软件清单：`lib/apps.sh`
 - 界面文字：`lib/i18n.sh`
+
+## 测试（QEMU）
+
+需要 KVM、`qemu-system-x86` 和 `edk2-ovmf`，不需要 root。
+
+```bash
+test/vm.sh fetch                      # 下载并校验最新 ISO
+test/vm.sh create systemd-boot        # 自动 pacstrap 一个全新的 btrfs 系统
+test/vm.sh save fresh                 # 保存快照（reflink），之后可以反复 restore
+test/vm.sh boot                       # UEFI 启动，ssh 端口 localhost:2222
+test/vm.sh run minimal.conf           # 部署当前工作区并无人值守运行（test/answers/）
+test/vm.sh ssh 'snapper list; efibootmgr'
+test/vm.sh stop && test/vm.sh restore fresh
+```
+
+`install.sh` 无人值守运行：`ARCHSETUP_ANSWERS=<预设文件>`；`bootstrap.sh`：`ARCHSETUP_LANG=en|zh ARCHSETUP_SOURCE=<序号>`。
