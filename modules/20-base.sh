@@ -58,7 +58,7 @@ esac
 
 # ---- base tools --------------------------------------------------------------
 pac man-db man-pages bash-completion pacman-contrib vim less wget unzip \
-    openssh linux-firmware
+    openssh linux-firmware polkit
 svc_enable fstrim.timer paccache.timer
 
 # ---- per-user desktop language (systemd user environment, not the tty) -------

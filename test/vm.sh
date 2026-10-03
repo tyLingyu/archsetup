@@ -100,8 +100,8 @@ cmd_restore() { cp --reflink=auto "$VM/$1.raw" "$DISK"; cp "$VM/$1.vars" "$VARS"
 
 cmd_boot() {
     # a VGA device even when headless, so `test/vm.sh shot` can screendump
-    local display=(-display none -vga none -device virtio-vga)
-    [[ ${1:-} == --gui ]] && display=(-device virtio-vga-gl -display gtk,gl=on)
+    local display=(-display none -vga std)
+    [[ ${1:-} == --gui ]] && display=(-vga std -display gtk)
     # shellcheck disable=SC2046
     qemu-system-x86_64 $(accel) -machine q35 -smp "$CPUS" -m "$MEM" \
         -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \
