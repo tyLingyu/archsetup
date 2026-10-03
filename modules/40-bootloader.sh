@@ -157,6 +157,10 @@ install_limine() {
 }
 
 install_refind() {
+    # decide before refind-install, which may remount the ESP
+    local boot_separate=""
+    mountpoint -q /boot && boot_separate=1
+
     pac refind efibootmgr
     run refind-install
     cat > /boot/refind_linux.conf <<EOF
@@ -165,7 +169,7 @@ install_refind() {
 EOF
     # kernels sit inside a btrfs subvolume when /boot isn't its own partition
     local conf=$ESP/EFI/refind/refind.conf subvol
-    if is_btrfs_root && [[ $(findmnt -no TARGET /boot) != /boot ]]; then
+    if is_btrfs_root && [[ -z $boot_separate ]]; then
         subvol=$(findmnt -no FSROOT / | sed 's|^/||')
         grep -q "^also_scan_dirs.*$subvol/boot" "$conf" || echo "also_scan_dirs +,$subvol/boot" >> "$conf"
     fi
