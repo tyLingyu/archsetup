@@ -145,3 +145,37 @@ is_cn() {
     [[ $(readlink -f /etc/localtime 2>/dev/null) == */Asia/Shanghai ]] && return 0
     [[ $(curl -fsS --max-time 3 https://ipinfo.io/country 2>/dev/null | tr -d '\r\n') == CN ]]
 }
+
+is_btrfs_root() { [[ $(findmnt -no FSTYPE /) == btrfs ]]; }
+
+# Kernel command line for new boot entries: reuse what the running system
+# booted with (already correct for LUKS / LVM / btrfs subvolumes), minus
+# bootloader-specific arguments.
+boot_cmdline() {
+    local a out=()
+    for a in $(</proc/cmdline); do
+        case $a in BOOT_IMAGE=*|initrd=*|*.efi|*.EFI) continue ;; esac
+        out+=("$a")
+    done
+    if [[ " ${out[*]} " != *" root="* ]]; then
+        local extra=(root=UUID=$(findmnt -no UUID /) rw)
+        is_btrfs_root && extra+=("rootflags=subvol=$(findmnt -no FSROOT / | sed 's|^/||')")
+        out=("${extra[@]}" "${out[@]}")
+    fi
+    echo "${out[*]}"
+}
+
+# Print the ESP path that holds Windows Boot Manager (ours first, then any
+# other ESP mounted read-only under /run/archsetup/esp-N). Non-zero if none.
+find_windows_esp() {
+    local esp i=0 dev mp
+    esp=$(esp_path 2>/dev/null) && [[ -f $esp/EFI/Microsoft/Boot/bootmgfw.efi ]] && { echo "$esp"; return; }
+    while read -r dev; do
+        [[ $(findmnt -no TARGET "$dev" 2>/dev/null) == "$esp" ]] && continue
+        mp=/run/archsetup/esp-$((i++)); mkdir -p "$mp"
+        mountpoint -q "$mp" || mount -o ro "$dev" "$mp" 2>/dev/null || continue
+        [[ -f $mp/EFI/Microsoft/Boot/bootmgfw.efi ]] && { echo "$mp"; return; }
+        umount "$mp" 2>/dev/null
+    done < <(lsblk -rnpo PATH,PARTTYPE | awk 'tolower($2)=="c12a7328-f81f-11d2-ba4b-00a0c93ec93b"{print $1}')
+    return 1
+}

@@ -28,12 +28,15 @@ export UI_LANG GH_PROXY REPO_DIR
 command -v dialog &>/dev/null || pacman -S --needed --noconfirm dialog
 
 MODULES=(
+    00-presnap      # btrfs: raw snapshot before the first package is installed
     10-mirrors      # reflector
     11-repos        # multilib, archlinuxcn, chaotic-aur, paru, gh-proxy for makepkg
+    12-snapper      # btrfs: snapper config, import the raw snapshot
     20-base         # timezone, locale, hostname, root, user, sudo
     30-network
     40-bootloader
     50-gpu
+    55-snapshot     # btrfs: snapshot before the desktop
     60-desktop
     70-apps
     99-finish
@@ -211,12 +214,23 @@ w_bootloader() {
         items+=(systemd-boot "systemd-boot" grub "GRUB" limine "Limine" refind "rEFInd")
     else
         text+="\n\n$(t boot_bios)"
-        items+=(grub "GRUB" limine "Limine")
+        items+=(grub "GRUB")
     fi
+    text+="\n\n$(t boot_cmdline "$(boot_cmdline)")"
 
     b=$(d_menu "$(t boot_title)" "$text" "${BOOTLOADER:-$def}" "${items[@]}") || return 1
+
+    local rm_old=""
+    # offer to remove the old ones, unless we're just reinstalling the same one
+    local others=() o
+    for o in "${found[@]}"; do [[ $o != "$b" ]] && others+=("$o"); done
+    if [[ $b != keep ]] && ((${#others[@]})); then
+        d_noyes "$(t boot_title)" "$(t boot_rm_old "${others[*]}" "$b")"
+        case $? in 0) rm_old=1 ;; 1) ;; *) return 1 ;; esac
+    fi
     save_answer BOOTLOADER "$b"
     save_answer BOOT_OLD "${found[*]}"
+    save_answer BOOT_REMOVE_OLD "$rm_old"
 }
 
 # ---- apps (one checklist per category; Back walks to the previous category) ---
@@ -256,7 +270,8 @@ w_summary() {
     s+="$(t sum_host): ${HOSTNAME_NEW}\n"
     s+="$(t sum_user): ${USER_NAME}$([[ -n $USER_NEW ]] && echo " ($(t new))")\n"
     s+="$(t sum_net): ${NETWORK}\n"
-    s+="$(t sum_boot): ${BOOTLOADER}${BOOT_OLD:+ ($(t detected): $BOOT_OLD)}\n"
+    s+="$(t sum_boot): ${BOOTLOADER}${BOOT_OLD:+ ($(t detected): $BOOT_OLD)}${BOOT_REMOVE_OLD:+, $(t sum_rm_old)}\n"
+    is_btrfs_root && s+="$(t sum_snap)\n"
     s+="GPU: $(lspci | grep -E 'VGA|3D|Display' | sed 's/^[^:]*: //' | paste -sd ';' | cut -c1-120)\n"
     s+="$(t sum_apps): ${APPS:-$(t none)}\n\n"
     s+="$(t sum_confirm)"

@@ -57,7 +57,9 @@ L_en=(
     [boot_found]="Detected bootloader: %s\n\nKeep it, or install a different one?"
     [boot_keep]="Keep %s"
     [boot_none]="No bootloader detected. Choose one to install:"
-    [boot_bios]="(Legacy BIOS boot: only GRUB and Limine are available.)"
+    [boot_bios]="(Legacy BIOS boot: only GRUB is available.)"
+    [boot_cmdline]="Kernel cmdline (from the running system):\n  %s"
+    [boot_rm_old]="Remove the old bootloader(s): %s ?\n\nFiles on the ESP, UEFI boot entries and packages are removed after %s is installed successfully. Choose No to keep them as a fallback."
 
     [apps_title]="Applications"
     [cat_fonts]="Fonts"
@@ -75,6 +77,7 @@ L_en=(
     [sum_title]="Summary"
     [sum_desktop]="Desktop" [sum_tz]="Timezone" [sum_host]="Hostname" [sum_user]="User"
     [sum_net]="Network" [sum_boot]="Bootloader" [sum_apps]="Apps"
+    [sum_rm_old]="remove old" [sum_snap]="btrfs: snapper snapshots before the first package and before the desktop"
     [sum_confirm]="Start the installation? It runs unattended from here."
 
     [quit_title]="Quit"
@@ -145,7 +148,9 @@ L_zh=(
     [boot_found]="检测到引导程序：%s\n\n保留，还是安装其他引导程序？"
     [boot_keep]="保留 %s"
     [boot_none]="未检测到引导程序，请选择要安装的："
-    [boot_bios]="（Legacy BIOS 启动：只能使用 GRUB 和 Limine。）"
+    [boot_bios]="（Legacy BIOS 启动：只能使用 GRUB。）"
+    [boot_cmdline]="内核参数（取自当前系统）：\n  %s"
+    [boot_rm_old]="是否删除旧的引导程序：%s ？\n\n会在 %s 安装成功后删除 ESP 中的文件、UEFI 启动项和对应的包。选“否”则保留作为备用。"
 
     [apps_title]="应用程序"
     [cat_fonts]="字体"
@@ -163,6 +168,7 @@ L_zh=(
     [sum_title]="确认"
     [sum_desktop]="桌面" [sum_tz]="时区" [sum_host]="主机名" [sum_user]="用户"
     [sum_net]="网络" [sum_boot]="引导" [sum_apps]="软件"
+    [sum_rm_old]="删除旧引导" [sum_snap]="btrfs：安装第一个包之前、安装桌面之前各打一个 snapper 快照"
     [sum_confirm]="开始安装？之后将全自动进行。"
 
     [quit_title]="退出"
